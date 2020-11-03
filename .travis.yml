@@ -1,0 +1,24 @@
+sudo: required
+language: generic
+
+services:
+    - docker
+
+before_install:
+    - docker build -t viaches/react-test -f ./client/Dockerfile.dev ./client
+
+script:
+    - docker run -e CI=true viaches/react-test npm test -- --coverage
+
+after_success:
+    - docker build -t viaches/multi-client ./client
+    - docker build -t viaches/multi-nginx ./nginx
+    - docker build -t viaches/multi-server ./server
+    - docker build -t viaches/multi-worker ./worker
+    # Log in to the docker CLI
+    - echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_ID" --password-stdin
+    # Take those images and push them to docker hub
+    - docker push viaches/multi-client
+    - docker push viaches/multi-nginx
+    - docker push viaches/multi-server
+    - docker push viaches/multi-worker
